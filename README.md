@@ -150,11 +150,53 @@ O código acima se trata de uma web shell em asp.net, que comprova a exatidão d
 ### 5. Defense Evasion
 
 ![Evasão de Defesa](img/5.jpeg)
+
+Não é novidade que o Volt Typhoon usa técnicas de evasão de defesa para evitar ser detectado, e na tarefa número cinco diz que eles usam métodos como limpeza regular de arquivos, eliminação de logs e reconhecimento completo do ambiente operacional.
+A primeira pergunta diz que na tentativa de encobrir os rastros eles limpam os registros RDP, e quer saber qual cmdlet do PowerShell o invasor usa para remover o registro "usado mais recentemente". Para achar o cmdlet, usei a mesma consulta e a mesma técnica de Stack Counting da tarefa anterior.
+
+Consulta: `index="main" sourcetype="powershell" UserId="dean-admin" | stats count by CommandLine`
+
+
 ![Evasão de Defesa](img/5-a.jpeg)
+
+A resposta da consulta retorna alguns comandos, mas `Remove-ItemProperty` está diretamente relacionado com a limpeza de registros. Vamos investigar mais a fundo!
+
+Consulta: `index="main" sourcetype="powershell" UserId="dean-admin" "*Remove-ItemProperty*"`
+
 ![Evasão de Defesa](img/5-aa.jpeg)
-![Evasão de Defesa](img/5-b.jpeg)
-![Evasão de Defesa](img/5-ba.jpeg)
+
+A resposta da consulta mostra esses 3 eventos em horários diferentes mas com o comando em comum: `Remove-ItemProperty -Path $registryPath -Name MRU0 -ErrorAction SilentlyContinue`
+O invasor em dias e horários diferentes veio limpando esses registros "MRU0(usado mais recentemente)", ele usou uma variável `$registryPath` que contém o caminho do registro, e quero ver qual foi o caminho passado para ela.
+
+Consulta: `index="main" sourcetype="powershell" UserId="*dean-admin*" "*Remove-ItemProperty*"`
+
 ![Evasão de Defesa](img/5-c.jpeg)
+
+A resposta da consulta mostra alguns eventos, e um em específico conseguimos ver qual caminho foi passado para a variável. 
+`$registryPath = "HKCU:\Software\Microsoft\Terminal Server Client\Default"` (Servidores e IPs que foram acessados via RDP a partir da máquina)
+
+Portando, `Remove-ItemProperty` é de fato a resposta correta.
+
+A segunda pergunta diz que o invasor APT continua cobrindo os rastros renomeando a extensão do arquivo criado anteriormente, e quer saber qual é o nome do arquivo+extensão criado por eles.
+Para me ajudar a responder essa pergunta, vou consultar o MITRE ATT&CK. O MITRE ATT&CK é um framework de táticas, técnicas e procedimentos conhecidos, que engloba também essas informações atreladas a grupos conhecidos de hackers, crackers e APTs.
+Dentro do MITRE ATT&CK, na seção do grupo Volt Typhoon, vou dar um CTRL+F e pesquisar pelo termo "extension" para achar alguma informação relevante.
+
+![Evasão de Defesa](img/5-b.jpeg)
+
+Após pesquisar, vemos que o grupo faz cópia do banco de dados do AD (ntds.dit) e coloca a extensão .gif no arquivo.
+Com essa informação em mãos, vou fazer uma nova busca no Splunk.
+
+Consulta: `index="main" (sourcetype="powershell" OR sourcetype="wmic") (username="*dean-admin*" OR UserId="*dean-admin*") "*.gif*" | table _time host username command`
+
+Explicação da consulta: Como eu não sabia aonde exatamente procurar pela extensão .gif, a solução que encontrei foi ser mais generalista. Então, usei duas origens diferentes de logs `powershell` e `wmic`, e usei o mesmo nome de usuário `dean-admin` (conta comprometida) em `username` e `UserId`, pois os logs do powershell e do wmic diferem o nome usuário no campo. A saída vai ser organizada em uma tabela para uma melhor vizualização com as colunas de data/hora, host(máquina), nome de usuário e comando.  
+
+![Evasão de Defesa](img/5-ba.jpeg)
+
+A saída da consulta mostra um evento que vem do invasor onde ele, usando o wmic, renomeia para `cl64.gif` a cópia do banco de dados do AD que foi movida para o servidor web e compactada nos passos anteriores.
+
+![Evasão de Defesa](img/5-c.jpeg)
+
+![Evasão de Defesa](img/5-ca.jpeg)
 
 ### 6. Credential Access
 
