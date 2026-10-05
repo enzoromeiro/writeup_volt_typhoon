@@ -194,7 +194,13 @@ Explicação da consulta: Como eu não sabia aonde exatamente procurar pela exte
 
 A saída da consulta mostra um evento que vem do invasor onde ele, usando o wmic, renomeia para `cl64.gif` a cópia do banco de dados do AD que foi movida para o servidor web e compactada nos passos anteriores.
 
-![Evasão de Defesa](img/5-c.jpeg)
+Na última pergunta, é questionado em qual caminho de regedit o invasor verifica evidências de um ambiente virtualizado. Regedit é uma ferramenta oficial do Windows usada para visualizar, criar e modificar o banco de dados interno de configurações do computador. Ele guarda informações sobre os programas, preferências dos usuários, também armazena chaves de configuração que dizem ao sistema quais programas devem ser abertos assim que o computador liga. Os caminhos no Regedit começam com `HKEY`, então vou realizar uma consulta utilizando essa palavra-chave.
+
+Consulta: ``
+
+Explicação da consulta: 
+
+![Evasão de Defesa](img/c1.jpeg)
 
 ![Evasão de Defesa](img/5-ca.jpeg)
 
