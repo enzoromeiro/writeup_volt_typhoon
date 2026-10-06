@@ -194,23 +194,46 @@ Explicação da consulta: Como eu não sabia aonde exatamente procurar pela exte
 
 A saída da consulta mostra um evento que vem do invasor onde ele, usando o wmic, renomeia para `cl64.gif` a cópia do banco de dados do AD que foi movida para o servidor web e compactada nos passos anteriores.
 
-Na última pergunta, é questionado em qual caminho de regedit o invasor verifica evidências de um ambiente virtualizado. Regedit é uma ferramenta oficial do Windows usada para visualizar, criar e modificar o banco de dados interno de configurações do computador. Ele guarda informações sobre os programas, preferências dos usuários, também armazena chaves de configuração que dizem ao sistema quais programas devem ser abertos assim que o computador liga. Os caminhos no Regedit começam com `HKEY`, então vou realizar uma consulta utilizando essa palavra-chave.
+Na última pergunta, é questionado em qual caminho de regedit o invasor verifica evidências de um ambiente virtualizado. Regedit é uma ferramenta oficial do Windows usada para visualizar, criar e modificar o banco de dados interno de configurações do computador. Ele guarda informações sobre os programas, preferências dos usuários, também armazena chaves de configuração que dizem ao sistema quais programas devem ser abertos assim que o computador inicializa. Os caminhos no Regedit começam com `HKEY`, então vou realizar uma consulta utilizando essa palavra-chave.
 
-Consulta: ``
+Consulta: `index="main" (sourcetype="powershell" OR sourcetype="wmic") (username="*dean-admin*" OR UserId="*dean-admin*") "*HKEY*" | eval User=coalesce(username, UserId) | eval Command=coalesce(CommandLine, command) | table _time host User Command`
 
-Explicação da consulta: 
+Explicação da consulta: Procurando pela palavra-chave "HKEY" nos logs do powershell e wmic que venha do usuário dean-admin. Usei o eval + coalesce para reter o resultado presente em um dos campos e organizei em formato de tabela com os campos de data/hora, host (máquina), usuário e comando. 
 
-![Evasão de Defesa](img/c1.jpeg)
+![Evasão de Defesa](img/5-1.jpeg)
+
+O resultado da consulta mostra esses três eventos que contém a palavra-chave "HKEY", o evento mais antigo ocorreu no dia `26/03/2024` as `21:15:18` mas não está aparecendo o comando inteiro, então é preciso investigar o log bruto. Para isso, é necessário deixar apenas a primeira linha da consulta `index="main" (sourcetype="powershell" OR sourcetype="wmic") (username="*dean-admin*" OR UserId="*dean-admin*") "*HKEY*"`.
 
 ![Evasão de Defesa](img/5-ca.jpeg)
+
+E como pode ser visto na imagem acima, o comando onde o invasor verifica evidências de um ambiente virtualizado é `Get-ItemProperty -Path "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control" | Select-Object -Property *Virtual*`.
+Eu poderia ter documentado apenas o comando correto, mas eu quis mostrar que é necessário a criatividade. Nem tudo acontece como deveria e não sei se foi proposital da sala, mas é nessas horas que a capacidade de resolver problemas se torna um diferencial.
 
 ### 6. Credential Access
 
 ![Acesso Credencial](img/6.jpeg)
-![Acesso Credencial](img/6-a.jpeg)
+
+A tarefa 6 diz que o Volt Typhoon frequentemente vasculha rede de destino para descobrir e extrair credenciais de vários programas, e além disso, eles são conhecidos por acessar credenciais com hash diretamente da memória do sistema.
+A primeira pergunta diz que o grupo usa consultas `reg` para encontrar credenciais úteis, e quer saber quais são os três softwares que eles estão investigando.
+O comando `reg query` serve para consultar e ler informações diretamente do Registro do Windows através do Prompt de Comando (CMD) ou do PowerShell, sem a necessidade de abrir a interface gráfica do Editor do Registro (regedit).
+
+![Acesso Credencial](img/6-1.jpeg)
+![Acesso Credencial](img/6-2.jpeg)
+![Acesso Credencial](img/6-3.jpeg)
+
+
+
 ![Acesso Credencial](img/6-b.jpeg)
+
+
+
 ![Acesso Credencial](img/6-ba.jpeg)
+
+
+
 ![Acesso Credencial](img/6-bb.jpeg)
+
+
 
 ### 7. Discovery & Lateral Movement
 
