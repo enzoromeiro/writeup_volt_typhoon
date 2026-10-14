@@ -256,12 +256,64 @@ A saída nos mostra o comando real usado pelo atacante para baixar e executar o 
 ### 7. Discovery & Lateral Movement
 
 ![Descoberta e Movimentação lateral](img/7.jpeg)
+
+A questão 7 diz que o grupo realiza a tática de descoberta (Discovery) usando técnicas de enumeração para coletar informações sobre arquitetura de rede, mecanismo de registro, logins bem-sucedidos e configurações de software. Além disso, realizam a tática de movimentação lateral (Lateral Movement) movendo shells criados anteriormente para servidores diferentes.
+A primeira pergunta diz que o invasor utiliza o wevtutil (ferramenta de recuperação de logs) para enumerar logs do Windows, e quer saber quais IDs de eventos o invasor está procurando. 
+
+Consulta: `index="main" sourcetype="powershell" UserId="*dean-admin*" "*wevtutil*" EventID=* | table _time host CommandLine EventID`
+
+Explicação da consulta: Estamos procurando nos logs do powershell, algum evento que venha do usuário `dean-admin`, que tenha o `EventID` preenchido e que contenha a palavra "wevtutil" em algum lugar do log. O resultado é organizado em uma tabela contendo as colunas de data/hora, máquina, comando e o identificador do evento.
+
 ![Descoberta e Movimentação lateral](img/7-a.jpeg)
+
+A saída da consulta mostra 11 eventos com identificadores de evento em comum. Para unificar os eventos com EventID iguais e ficar melhor para visualizar, irei fazer o seguinte:
+
+Consulta: `index="main" sourcetype="powershell" UserId="*dean-admin*" "*wevtutil*" EventID=* | stats values(EventID) as Eventos_Registrados by UserId | table UserId Eventos_Registrados`
+
+Explicando a consulta: O que mudou em relação a consulta anterior é que estou agrupando os `EventID`, removendo as duplicatas, renomeando o resultado para `Eventos_Registrados` e separando por usuário `UserId`. A saída será exibida em uma tabela com as colunas de usuário e eventos registrados.
+
 ![Descoberta e Movimentação lateral](img/7-aa.jpeg)
+
+O resultado da consulta mostra três eventos registrados: `4624`, `4625` e `4769`.
+É importante lembrar que a pergunta quer o resultado em ordem crescente, então coloquei do menor para o maior.
+
+A segunda pergunta diz que o invasor copia a shell da web original e se move lateralmente para o servidor-02, e ela quer saber qual é o nome do novo web shell que foi criado. 
+
+Para obter mais detalhes sobre esse comportamento, vou consultar no MITRE ATT&CK algo relacionado a web shell.
+
 ![Descoberta e Movimentação lateral](img/7-b.jpeg)
-![Descoberta e Movimentação lateral](img/7-ba.jpeg)
-![Descoberta e Movimentação lateral](img/7-bb.jpeg)
+
+Lá diz que o grupo usou webshells com nomes de `AuditReport.jspx` e `iisstart.aspx` em ambientes comprometidos. 
+
+Com essa informação em mãos, farei o seguinte:
+
+Consulta: `index="main" sourcetype="powershell" "*server-02*" "*AuditReport.jspx*"`
+
+Explicação da consulta: Estou procurando nos logs no powershell algum evento que tenha as palavras "server-02" e "AuditReport.jspx".
+
 ![Descoberta e Movimentação lateral](img/7-bc.jpeg)
+
+A resposta da consulta nos mostra um evento com a seguinte linha de comando: `Copy-Item -Path "C:\Windows\Temp\iisstart.aspx" -Destination "\\server-02\C$\inetpub\wwwroot\AuditReport.jspx"`
+
+Essa linha de comando mostra que o invasor copiou o arquivo `iisstart.aspx` e mandou para o server-02 renomeando para `AuditReport.jspx`.
+
+Daria para chegar na mesma resposta fazendo a técnica de stack counting, e seria da seguinte maneira:
+
+Consulta: `index="main" sourcetype="powershell" "*server-02*" | stats count by CommandLine`
+
+Explicação da consulta: Estamos procurando nos logs do powershell algum evento que contenha a palavra "server-02", a saída é  agrupada e organizada por quantidade de ocorrência de comandos (`CommandLine`). Dessa forma, descobriremos os comandos mais raros que foram executados.
+
+![Descoberta e Movimentação lateral](img/7-ba.jpeg)
+
+O resultado da consulta mostra 3 eventos, como o procedimento do atacante é copiar web shell para outros servidores, o comando `Copy-Item` é o que precisa ser investigado.
+
+Consulta: `index="main" sourcetype="powershell" "*server-02*" "*Copy-Item*"`
+
+Explicação da consulta: Estamos procurando nos logs do powershell algum evento que contenha as palavras "server-02" e "Copy-Item"
+
+![Descoberta e Movimentação lateral](img/7-bb.jpeg)
+
+Dessa forma, chegamos no mesmo evento que foi achado anteriormente.
 
 ### 8. Collection
 
