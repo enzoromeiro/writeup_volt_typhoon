@@ -318,9 +318,27 @@ Dessa forma, chegamos no mesmo evento que foi achado anteriormente.
 ### 8. Collection
 
 ![Coleção](img/8.jpeg)
+
+A questão 8 diz que durante a fase de coleta (Collection) o grupo APT extrai vários tipos de dados como informações locais do navegador e ativos valiosos descobertos no ambiente.
+A pergunta diz de que o invasor conseguiu localizar algumas informações financeiras valiosas durante a fase de coleta, e quer saber quais são os três arquivos que o Volt Typhoon faz cópias usando o PowerShell (em ordem crescente).
+
+Consulta: `index="main" sourcetype="powershell" UserId="*dean-admin*" | stats count by CommandLine`
+
+Explicação da consulta: Estou fazendo um Stack Counting nos logs do PowerShell e procurando por comandos digitados para encontrar ocorrências raras.
+
 ![Coleção](img/8-a.jpeg)
+
+O resultado da consulta mostra o comando `Copy-Item`, e embora ele tenha sido digitado 11 vezes, como a pergunta quer saber quais são os arquivos que o Volt Typhoon faz cópias, esse comando é equivalente, então vou investigá-lo mais a fundo.
+
+Comando: `index="main" sourcetype="powershell" UserId="*dean-admin*" CommandLine="Copy-Item"`
+
 ![Coleção](img/8-aa.jpeg)
+
+Explicação do comando: Estou procurando nos logs do PowerShell algum evento que venha do usuário `dean-admin` e que contenha na linha de comando `Copy-Item`.
+
 ![Coleção](img/8-ab.jpeg)
+
+Descendo um pouco após a consulta, haviam essas três cópias em sequência de arquivos `.csv` que se tratam de planilhas excel no formato bruto (sem formatação de tabela, fórmulas, cores, etc.). Os arquivos são: `2022.csv`, `2023.csv` e `2024.csv`. E a cópia tinha como destino a pasta criada pelo atacante no diretorio `\Temp\faudit\`.
 
 ### 9. C2 & Cleanup
 
