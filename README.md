@@ -362,7 +362,7 @@ Entrei no MITRE ATT&CK para coletar alguma informação sobre esse comportamento
 
 ![C2 e Limpeza](img/9-b.jpeg)
 
-Fiz a consulta utilizando essa informação: `index="main" (sourcetype="powershell" OR sourcetype="wmic") (UserId="*dean-admin*" OR username="*dean-admin*") "*wevtutil cl*"`
+Fiz a consulta utilizando essa informação: `index="main" (sourcetype="powershell" OR sourcetype="wmic") (UserId="*dean-admin*" OR username="*dean-admin*") (CommandLine="*wevtutil*" OR command="*wevtutil*") "cl"`
 
 Explicação da consulta: Estou procurando nos logs do powershell e do wmic algum evento que venha do usuário `dean-admin` e que contenha a palavra "wevtutil" com o comando de limpeza "cl".
 
