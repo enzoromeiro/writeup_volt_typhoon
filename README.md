@@ -343,10 +343,31 @@ Descendo um pouco após a consulta, haviam essas três cópias em sequência de 
 ### 9. C2 & Cleanup
 
 ![C2 e Limpeza](img/9.jpeg)
+
+A questão 9 diz que o grupo utiliza ferramentas disponíveis publicamente, bem como dispositivos comprometidos para estabelecer canais de comando e controle (C2). Para limpeza dos rastros, foi observado que o grupo exclui logs de eventos e remove de forma seletiva outros vestígios e artefatos de suas atividades maliciosas.
+
+A primeira pergunta diz que o invasor usa netsh para criar um proxy para comunicações C2 e quer saber qual endereço de conexão e porta o invasor usa ao configurar o proxy.
+
+Consulta: `index="main" (sourcetype="powershell" OR sourcetype="wmic") (UserId="*dean-admin*" OR username="*dean-admin*") "*netsh*" | eval Command=coalesce(CommandLine, command) | eval User=coalesce(UserId, username) | table _time host User Command`
+
+Explicação da consulta: Estou procurando nos logs do powershell e do wmic algum evento que venha do usuário `dean-admin` e que contenha a palavra "netsh". 
+Como temos duas fontes de logs diferentes, os campos são diferentes, então no caso de uma ocorrência (campo) ser verdadeira, a outra vai estar vazia. Para resolver esse problema e facilitar a visualização na tabela vou utilizar o `eval` + `coalesce` nos campos de comando e nos campos de usuário, e então exibir o resultado como tabela nas colunas de data/hora, host (máquina), usuário e comando. 
+
 ![C2 e Limpeza](img/9-a.jpeg)
+
+O resultado da consulta mostra 4 eventos, e em um desses eventos tem o endereço IP e a porta que o invasor usou na criação do proxy. 
+
+A segunda pergunta diz que para o invasor ocultar suas atividades, ele limpa quatro tipos de registro de eventos no sistema comprometido, e quer saber quais são.
+Entrei no MITRE ATT&CK para coletar alguma informação sobre esse comportamento do grupo, pesquisando por "clear" cheguei até a informação que eles utilizam o `Wevtutil` para limpar logs de eventos do Windows.
+
 ![C2 e Limpeza](img/9-b.jpeg)
+
+Fiz a consulta utilizando essa informação: `index="main" (sourcetype="powershell" OR sourcetype="wmic") (UserId="*dean-admin*" OR username="*dean-admin*") "*wevtutil cl*"`
+
+Explicação da consulta: Estou procurando nos logs do powershell e do wmic algum evento que venha do usuário `dean-admin` e que contenha a palavra "wevtutil" com o comando de limpeza "cl".
+
 ![C2 e Limpeza](img/9-ba.jpeg)
 
-
+O resultado da consulta mostra 1 evento onde o invasor digita a linha de comando `wevtutil cl Application Security Setup System`, e exclui os respectivos logs desses tipos de registro.
 
 
