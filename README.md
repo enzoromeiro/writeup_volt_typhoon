@@ -370,4 +370,31 @@ Explicação da consulta: Estou procurando nos logs do powershell e do wmic algu
 
 O resultado da consulta mostra 1 evento onde o invasor digita a linha de comando `wevtutil cl Application Security Setup System`, e exclui os respectivos logs desses tipos de registro.
 
+## Técnicas Living off the Land Identificadas
 
+Lista dos binários nativos do Windows (LOLBins) 
+usados pelo atacante e para que cada um foi usado:
+
+| Binário | Uso legítimo | Como o atacante usou |
+|---------|-------------|---------------------|
+| Active Directory Self Service | ... | ... |
+| Wevtutil | ... | ... |
+| Wmic | ... | ... |
+| PowerShell | ... | ... |
+
+---
+
+## Mapeamento MITRE ATT&CK Completo
+
+Tabela final consolidando todas as técnicas 
+identificadas na investigação.
+
+| Tática | ID | Técnica | Evidência |
+|--------|----|---------|-----------|
+| ... | ... | ... | ... |
+
+---
+
+## 💡 Conclusão
+
+Grupos APTs são o maior desafio para a equipe de ciber segurança em uma organização, eles utilizam de técnicas avançadas em cada etapa do ataque. As soluções de segurança já possuem mecanismos para detectar o uso de ferramentas tradicionais usadas por atacantes para fins maliciosos, elas já estão "manjadas". Por este motivo que grupos APTs como Volt Typhoon, utilizam técnicas de living off the land, usando binários/utilitários nativos do sistema operacional (os mecanismos de detecção confiam nessas ferramentas nativas) para realizar ações maliciosas na máquina infectada e na rede. Concluo que é muito importante a equipe de SOC monitorar e criar regras de detecção contra comportamentos anomalos em ferramentas nativas e legítimas.
