@@ -377,10 +377,10 @@ usados pelo atacante e para que cada um foi usado:
 
 | Binário | Uso legítimo | Como o atacante usou |
 |---------|-------------|---------------------|
-| Active Directory Self Service | ... | ... |
-| Wevtutil | ... | ... |
-| Wmic | ... | ... |
-| PowerShell | ... | ... |
+| Active Directory Self Service | Ferramenta usada por usuários comuns de um domínio para que eles façam a recuperação de senha sem depender de um ADM. Esta ferramenta também permite a implementação de MFA no login. | ... |
+| Wevtutil | Ferramenta de terminal utilizada para visualização, remoção e gerenciamento de eventos registrados sem a necessidade de abrir o Event Viewer via GUI. | ... |
+| Wmic | Um painél de controle via terminal usado para configuração geral do sistema, ele foi descontinuado e substituído pelo PowerShell no Windows 11. | ... |
+| PowerShell | Terminal de comandos usado para realizar operações no sistema operacional sem uma interface gráfica. | ... |
 
 ---
 
