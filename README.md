@@ -377,10 +377,10 @@ usados pelo atacante e para que cada um foi usado:
 
 | Binário | Uso legítimo | Como o atacante usou |
 |---------|-------------|---------------------|
-| Active Directory Self Service | Ferramenta usada por usuários comuns de um domínio para que eles façam a recuperação de senha sem depender de um ADM. Esta ferramenta também permite a implementação de MFA no login. | ... |
-| Wevtutil | Ferramenta de terminal utilizada para visualização, remoção e gerenciamento de eventos registrados sem a necessidade de abrir o Event Viewer via GUI. | ... |
-| Wmic | Um painél de controle via terminal usado para configuração geral do sistema, ele foi descontinuado e substituído pelo PowerShell no Windows 11. | ... |
-| PowerShell | Terminal de comandos usado para realizar operações no sistema operacional sem uma interface gráfica. | ... |
+| Active Directory Self Service | Ferramenta usada por usuários comuns de um domínio para que eles façam a recuperação de senha sem depender de um ADM. Esta ferramenta também permite a implementação de MFA no login. | Aproveitou uma vulnerabilidade no serviço para obter acesso inicial à rede, alterar a senha do usuário `dean-admin` e após invadir, criou outra conta de administrador chamada `voltyp-admin`. |
+| Wevtutil | Ferramenta de terminal utilizada para visualização, remoção e gerenciamento de eventos registrados sem a necessidade de abrir o Event Viewer via GUI. | Enumeração dos eventos 4624,4625 e 4769 para coletar informações. |
+| wmic e cmd e ntdsutil | Wmic é um painél de controle via terminal usado para configuração geral do sistema, ele foi descontinuado e substituído pelo PowerShell no Windows 11. CMD é um terminal de comandos mais antigo de sistemas Windows e o ntdsutil é um utilitário avançado destinado a administradores de redes para realizar a manutenção, recuperação e gerenciamento do banco de dados do Active Directory. | Utilizou o wmic para coletar informações de unidades locais no server01 e server02. Através do wmic ele chamou o processo do cmd, criou o diretório `\tmp`, e usou o ntdsutil para dumpar o banco de dados do Active Directory para esta pasta. Alterou o nome e extensão de arquivo para cl64.gif.|
+| PowerShell e regedit | PowerShell é um terminal de comandos usado para realizar operações no sistema operacional sem uma interface gráfica. O regedit é um utilitário que serve para visualizar e modificar o Registro do Windows. | Para estabelecer persistência, criou um web shell codificado em Base64. Realizou também remoção de registros, usou o regedit para procurar evidência de ambiente virtualizado, fez consultas no registro para encontrar credenciais úteis e executou comando codificado que baixava e executava o mimikatz. Para se mover lateralmente, o invasor copia o arquivo `iisstart.aspx` e move para o server-02 renomeando para `AuditReport.jspx`. |
 
 ---
 
