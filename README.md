@@ -387,7 +387,7 @@ usados pelo atacante e para que cada um foi usado:
 
 ---
 
-## Mapeamento MITRE ATT&CK Completo
+## (Em desenvolvimento) Mapeamento MITRE ATT&CK Completo
 
 Tabela final consolidando todas as técnicas 
 identificadas na investigação.
