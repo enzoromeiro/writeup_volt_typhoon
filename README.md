@@ -83,7 +83,7 @@ A resposta da consulta mostrou três eventos vindo da conta comprometida. Um del
 
 ![Persistência](img/4.jpeg)
 
-A tarefa quatro diz que o Volt Typhoon frequentemente aplica web shells como mecanismo de persistência, e disfarçam elas como arquivos legitimos, permitindo o controle remoto sobre o servidor e executar os comandos sem ser detectado.
+A tarefa quatro diz que o Volt Typhoon frequentemente aplica web shells como mecanismo de persistência, e disfarçam elas como arquivos legítimos, permitindo o controle remoto sobre o servidor e executar os comandos sem ser detectado.
 A pergunta diz que o invasor criou uma web shell usando texto codificado em base64 (ofuscação), e quer saber em qual diretório o arquivo da web shell foi colocado. Vamos tentar usar essas informações ao nosso favor, para isso, preciso encontrar algum vestígio de base64 em algum evento.
 
 Consulta: `index="main" sourcetype="powershell" UserId="*dean-admin*" | stats count by CommandLine`
@@ -175,7 +175,7 @@ Consulta: `index="main" sourcetype="powershell" UserId="*dean-admin*" "*Remove-I
 A resposta da consulta mostra alguns eventos, e um em específico conseguimos ver qual caminho foi passado para a variável. 
 `$registryPath = "HKCU:\Software\Microsoft\Terminal Server Client\Default"` (Servidores e IPs que foram acessados via RDP a partir da máquina)
 
-Portando, `Remove-ItemProperty` é de fato a resposta correta.
+Portanto, `Remove-ItemProperty` é de fato a resposta correta.
 
 A segunda pergunta diz que o invasor APT continua cobrindo os rastros renomeando a extensão do arquivo criado anteriormente, e quer saber qual é o nome do arquivo+extensão criado por eles.
 Para me ajudar a responder essa pergunta, vou consultar o MITRE ATT&CK. O MITRE ATT&CK é um framework de táticas, técnicas e procedimentos conhecidos, que engloba também essas informações atreladas a grupos conhecidos de hackers, crackers e APTs.
@@ -188,7 +188,7 @@ Com essa informação em mãos, vou fazer uma nova busca no Splunk.
 
 Consulta: `index="main" (sourcetype="powershell" OR sourcetype="wmic") (username="*dean-admin*" OR UserId="*dean-admin*") "*.gif*" | table _time host username command`
 
-Explicação da consulta: Como eu não sabia aonde exatamente procurar pela extensão .gif, a solução que encontrei foi ser mais generalista. Então, usei duas origens diferentes de logs `powershell` e `wmic`, e usei o mesmo nome de usuário `dean-admin` (conta comprometida) em `username` e `UserId`, pois os logs do powershell e do wmic diferem o nome usuário no campo. A saída vai ser organizada em uma tabela para uma melhor vizualização com as colunas de data/hora, host(máquina), nome de usuário e comando.  
+Explicação da consulta: Como eu não sabia onde exatamente procurar pela extensão .gif, a solução que encontrei foi ser mais generalista. Então, usei duas origens diferentes de logs `powershell` e `wmic`, e usei o mesmo nome de usuário `dean-admin` (conta comprometida) em `username` e `UserId`, pois os logs do powershell e do wmic diferem o nome usuário no campo. A saída vai ser organizada em uma tabela para uma melhor visualização com as colunas de data/hora, host(máquina), nome de usuário e comando.  
 
 ![Evasão de Defesa](img/5-ba.jpeg)
 
@@ -202,7 +202,7 @@ Explicação da consulta: Procurando pela palavra-chave "HKEY" nos logs do power
 
 ![Evasão de Defesa](img/5-1.jpeg)
 
-O resultado da consulta mostra esses três eventos que contém a palavra-chave "HKEY", o evento mais antigo ocorreu no dia `26/03/2024` as `21:15:18` mas não está aparecendo o comando inteiro, então é preciso investigar o log bruto. Para isso, é necessário deixar apenas a primeira linha da consulta `index="main" (sourcetype="powershell" OR sourcetype="wmic") (username="*dean-admin*" OR UserId="*dean-admin*") "*HKEY*"`.
+O resultado da consulta mostra esses três eventos que contém a palavra-chave "HKEY", o evento mais antigo ocorreu no dia `26/03/2024` às `21:15:18` mas não está aparecendo o comando inteiro, então é preciso investigar o log bruto. Para isso, é necessário deixar apenas a primeira linha da consulta `index="main" (sourcetype="powershell" OR sourcetype="wmic") (username="*dean-admin*" OR UserId="*dean-admin*") "*HKEY*"`.
 
 ![Evasão de Defesa](img/5-ca.jpeg)
 
@@ -338,7 +338,7 @@ Explicação do comando: Estou procurando nos logs do PowerShell algum evento qu
 
 ![Coleção](img/8-ab.jpeg)
 
-Descendo um pouco após a consulta, haviam essas três cópias em sequência de arquivos `.csv` que se tratam de planilhas excel no formato bruto (sem formatação de tabela, fórmulas, cores, etc.). Os arquivos são: `2022.csv`, `2023.csv` e `2024.csv`. E a cópia tinha como destino a pasta criada pelo atacante no diretorio `\Temp\faudit\`.
+Descendo um pouco após a consulta, haviam essas três cópias em sequência de arquivos `.csv` que se tratam de planilhas excel no formato bruto (sem formatação de tabela, fórmulas, cores, etc.). Os arquivos são: `2022.csv`, `2023.csv` e `2024.csv`. E a cópia tinha como destino a pasta criada pelo atacante no diretório `\Temp\faudit\`.
 
 ### 9. C2 & Cleanup
 
@@ -355,7 +355,7 @@ Como temos duas fontes de logs diferentes, os campos são diferentes, então no 
 
 ![C2 e Limpeza](img/9-a.jpeg)
 
-O resultado da consulta mostra 4 eventos, e em um desses eventos tem o endereço IP e a porta que o invasor usou na criação do proxy. 
+O resultado da consulta mostra 4 eventos, e em um desses eventos tem o endereço IP `10.2.30.1` e a porta `8443` que o invasor usou na criação do proxy. 
 
 A segunda pergunta diz que para o invasor ocultar suas atividades, ele limpa quatro tipos de registro de eventos no sistema comprometido, e quer saber quais são.
 Entrei no MITRE ATT&CK para coletar alguma informação sobre esse comportamento do grupo, pesquisando por "clear" cheguei até a informação que eles utilizam o `Wevtutil` para limpar logs de eventos do Windows.
@@ -400,4 +400,4 @@ identificadas na investigação.
 
 ## 💡 Conclusão
 
-Grupos APTs são o maior desafio para a equipe de ciber segurança em uma organização, eles utilizam de técnicas avançadas em cada etapa do ataque. As soluções de segurança já possuem mecanismos para detectar o uso de ferramentas tradicionais usadas por atacantes para fins maliciosos, elas já estão "manjadas". Por este motivo que grupos APTs como Volt Typhoon, utilizam técnicas de living off the land, usando binários/utilitários nativos do sistema operacional (os mecanismos de detecção confiam nessas ferramentas nativas) para realizar ações maliciosas na máquina infectada e na rede. Concluo que é muito importante a equipe de SOC monitorar e criar regras de detecção contra comportamentos anomalos em ferramentas nativas e legítimas.
+Grupos APTs são o maior desafio para a equipe de cibersegurança em uma organização, eles utilizam de técnicas avançadas em cada etapa do ataque. As soluções de segurança já possuem mecanismos para detectar o uso de ferramentas tradicionais usadas por atacantes para fins maliciosos, elas já estão "manjadas". Por este motivo que grupos APTs como Volt Typhoon, utilizam técnicas de living off the land, usando binários/utilitários nativos do sistema operacional (os mecanismos de detecção confiam nessas ferramentas nativas) para realizar ações maliciosas na máquina infectada e na rede. Concluo que é muito importante a equipe de SOC monitorar e criar regras de detecção contra comportamentos anômalos em ferramentas nativas e legítimas.
