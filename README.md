@@ -380,7 +380,7 @@ usados pelo atacante e para que cada um foi usado:
 | wmic | Interface de linha de comando para consultar e administrar o sistema via WMI (Windows Management Instrumentation). Descontinuado e substituído pelo PowerShell. | Executou comandos remotamente em outras máquinas (ex: /node:webserver-01 process call create) e coletou informações das unidades locais no server01 e server02. |
 | CMD | Interpretador de comandos clássico do Windows | Acionado via wmic, criou o diretório \tmp e renomeou cisco-up.7z para cl64.gif na pasta wwwroot do webserver-01. |
 | Wevtutil | Ferramenta de terminal utilizada para visualização, remoção e gerenciamento de eventos registrados (Event Viewer) via terminal. | Enumerou os eventos 4624,4625 e 4769 para coletar informações e limpou os logs de eventos do Windows. |
-| netsh | Configuração de rede via linha de comando | Usando o netsh, o invasor cria um proxy para comunicações C2. |
+| netsh | Configuração de rede via linha de comando | Criação de proxy para comunicações C2. |
 | ntdsutil |  Utilitário avançado destinado a administradores de redes para realizar a manutenção, recuperação e gerenciamento do banco de dados do Active Directory. | Fez o dump do banco do AD para a pasta \tmp.  |
 | PowerShell | PowerShell é um terminal nativo do Windows com mais funcionalidades e linguagem de script. | Executou comandos codificados em Base64, incluindo o download do Mimikatz, e copiou arquivos para movimentação lateral e coleta. |
 | regedit/reg | O regedit é um utilitário que serve para visualizar e modificar o Registro do Windows | Procurou evidência de ambiente virtualizado e credenciais úteis. |
