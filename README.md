@@ -3,7 +3,7 @@
 
 ![introdução](img/introducao.jpeg)
 
-### 🌪 Quem é Volt Typhoon? 
+### Quem é Volt Typhoon? 
 
 Segundo o MITRE ATT&CK, Volt Typhoon (G1017), é um ator patrocinado pelo Estado da República Popular da China (RPC) que está ativo desde pelo menos 2021, visando principalmente organizações de infraestrutura crítica nos EUA e seus territórios, incluindo Guam. O direcionamento e o padrão de comportamento do Volt Typhoon foram avaliados como pré-posicionamento para permitir o movimento lateral para ativos de tecnologia operacional (OT) para possíveis ataques destrutivos ou disruptivos. O Volt Typhoon enfatizou a furtividade nas operações usando web shells, binários living-off-the-land (LOTL), atividades práticas de teclado e credenciais roubadas.
 
@@ -387,17 +387,6 @@ usados pelo atacante e para que cada um foi usado:
 
 ---
 
-## (Em desenvolvimento) Mapeamento MITRE ATT&CK Completo
-
-Tabela final consolidando todas as técnicas 
-identificadas na investigação.
-
-| Tática | ID | Técnica | Evidência |
-|--------|----|---------|-----------|
-| ... | ... | ... | ... |
-
----
-
-## 💡 Conclusão
+## Conclusão
 
 Grupos APTs são o maior desafio para a equipe de cibersegurança em uma organização, eles utilizam de técnicas avançadas em cada etapa do ataque. As soluções de segurança já possuem mecanismos para detectar o uso de ferramentas tradicionais usadas por atacantes para fins maliciosos, elas já estão "manjadas". Por este motivo que grupos APTs como Volt Typhoon, utilizam técnicas de living off the land, usando binários/utilitários nativos do sistema operacional (os mecanismos de detecção confiam nessas ferramentas nativas) para realizar ações maliciosas na máquina infectada e na rede. Concluo que é muito importante a equipe de SOC monitorar e criar regras de detecção contra comportamentos anômalos em ferramentas nativas e legítimas.
