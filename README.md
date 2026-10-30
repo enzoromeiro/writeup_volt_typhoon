@@ -1,5 +1,5 @@
 # 🧾 Write-up - Volt Typhoon 
-### Este projeto tem como foco investigar a sala Volt Typhoon da plataforma TryHackMe, utilizando consultas Splunk SPL, threat hunting, MITRE ATT&CK e pensamento analítico. 
+### Este projeto tem como foco investigar a sala Volt Typhoon da plataforma TryHackMe, utilizando consultas Splunk SPL, técnicas de threat hunting, MITRE ATT&CK e pensamento analítico. 
 
 ![introdução](img/introducao.jpeg)
 
