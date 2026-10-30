@@ -154,7 +154,7 @@ O código acima se trata de uma web shell em asp.net, que comprova a exatidão d
 Não é novidade que o Volt Typhoon usa técnicas de evasão de defesa para evitar ser detectado, e na tarefa número cinco diz que eles usam métodos como limpeza regular de arquivos, eliminação de logs e reconhecimento completo do ambiente operacional.
 A primeira pergunta diz que na tentativa de encobrir os rastros eles limpam os registros RDP, e quer saber qual cmdlet do PowerShell o invasor usa para remover o registro "usado mais recentemente". Para achar o cmdlet, usei a mesma consulta e a mesma técnica de Stack Counting da tarefa anterior.
 
-Consulta: `index="main" sourcetype="powershell" UserId="dean-admin" | stats count by CommandLine`
+Consulta: `index="main" sourcetype="powershell" UserId="*dean-admin*" | stats count by CommandLine`
 
 
 ![Evasão de Defesa](img/5-a.jpeg)
