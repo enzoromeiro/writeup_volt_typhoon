@@ -11,7 +11,7 @@ Segundo o MITRE ATT&CK, Volt Typhoon (G1017), é um ator patrocinado pelo Estado
 
 É uma técnica de evasão de defesa, onde o atacante, após comprometer um sistema, utiliza binários e ferramentas legítimas do próprio sistema operacional para executar ações maliciosas, dificultando a detecção por antivírus e EDRs que confiam nessas ferramentas.
 
-#### ⚙ Para a execução desse Write-up, foram utilizados apenas a sala Volt Typhoon da plataforma TryHackMe e o Splunk, que também é disponibilizado por eles na plataforma. Nesta sala, é preciso saber Splunk SPL (linguagem de consulta do Splunk) para podermos achar eventos suspeitos e então analisar os logs. Também é necessário utilizar o framework MITRE ATT&CK, para estudarmos o grupo e suas táticas, técnicas e procedimentos.
+#### Para a execução desse Write-up, foram utilizados apenas a sala Volt Typhoon da plataforma TryHackMe e o Splunk, que também é disponibilizado por eles na plataforma. Nesta sala, é preciso saber Splunk SPL (linguagem de consulta do Splunk) para podermos achar eventos suspeitos e então analisar os logs. Também é necessário utilizar o framework MITRE ATT&CK, para estudarmos o grupo e suas táticas, técnicas e procedimentos.
 
 ### 1. Scenario:
 
@@ -370,7 +370,7 @@ Explicação da consulta: Estou procurando nos logs do powershell e do wmic algu
 
 O resultado da consulta mostra 1 evento onde o invasor digita a linha de comando `wevtutil cl Application Security Setup System`, e exclui os respectivos logs desses tipos de registro.
 
-## Técnicas Living off the Land Identificadas
+### Técnicas Living off the Land Identificadas 🔎
 
 Lista dos binários nativos do Windows (LOLBins) 
 usados pelo atacante e para que cada um foi usado:
@@ -378,15 +378,15 @@ usados pelo atacante e para que cada um foi usado:
 | Binário | Uso legítimo | Como o atacante usou |
 |---------|-------------|---------------------|
 | wmic | Interface de linha de comando para consultar e administrar o sistema via WMI (Windows Management Instrumentation). Descontinuado e substituído pelo PowerShell. | Executou comandos remotamente em outras máquinas (ex: /node:webserver-01 process call create) e coletou informações das unidades locais no server01 e server02. |
-| CMD | Interpretador de comandos clássico do Windows | Acionado via wmic, criou o diretório \tmp e renomeou cisco-up.7z para cl64.gif na pasta wwwroot do webserver-01. |
-| Wevtutil | Ferramenta de terminal utilizada para visualização, remoção e gerenciamento de eventos registrados (Event Viewer) via terminal. | Enumerou os eventos 4624,4625 e 4769 para coletar informações e limpou os logs de eventos do Windows. |
+| cmd | Interpretador de comandos clássico do Windows | Acionado via wmic, criou o diretório \tmp e renomeou cisco-up.7z para cl64.gif na pasta wwwroot do webserver-01. |
+| wevtutil | Ferramenta de terminal utilizada para visualização, remoção e gerenciamento de eventos registrados (Event Viewer) via terminal. | Enumerou os eventos 4624,4625 e 4769 para coletar informações e limpou os logs de eventos do Windows. |
 | netsh | Configuração de rede via linha de comando | Criação de proxy para comunicações C2. |
 | ntdsutil |  Utilitário avançado destinado a administradores de redes para realizar a manutenção, recuperação e gerenciamento do banco de dados do Active Directory. | Fez o dump do banco do AD para a pasta \tmp.  |
-| PowerShell | PowerShell é um terminal nativo do Windows com mais funcionalidades e linguagem de script. | Executou comandos codificados em Base64, incluindo o download do Mimikatz, e copiou arquivos para movimentação lateral e coleta. |
+| powershell | PowerShell é um terminal nativo do Windows com mais funcionalidades e linguagem de script. | Executou comandos codificados em Base64, incluindo o download do Mimikatz, e copiou arquivos para movimentação lateral e coleta. |
 | regedit/reg | O regedit é um utilitário que serve para visualizar e modificar o Registro do Windows | Procurou evidência de ambiente virtualizado e credenciais úteis. |
 
 ---
 
 ## Conclusão
 
-Grupos APTs são o maior desafio para a equipe de cibersegurança em uma organização, eles utilizam de técnicas avançadas em cada etapa do ataque. As soluções de segurança já possuem mecanismos para detectar o uso de ferramentas tradicionais usadas por atacantes para fins maliciosos, elas já estão "manjadas". Por este motivo que grupos APTs como Volt Typhoon, utilizam técnicas de living off the land, usando binários/utilitários nativos do sistema operacional (os mecanismos de detecção confiam nessas ferramentas nativas) para realizar ações maliciosas na máquina infectada e na rede. Concluo que é muito importante a equipe de SOC monitorar e criar regras de detecção contra comportamentos anômalos em ferramentas nativas e legítimas.
+Grupos APTs são o maior desafio para a equipe de cibersegurança em uma organização, eles utilizam técnicas avançadas em cada etapa do ataque. As soluções de segurança já possuem mecanismos para detectar o uso de ferramentas tradicionais usadas por atacantes para fins maliciosos, elas já estão "manjadas". Por este motivo, grupos APTs como Volt Typhoon utilizam técnicas "living off the land", usando binários/utilitários nativos do sistema operacional (os mecanismos de detecção confiam nessas ferramentas nativas) para realizar ações maliciosas na máquina infectada e na rede. Concluo que é muito importante a equipe de SOC monitorar e criar regras de detecção contra comportamentos anômalos em ferramentas nativas e legítimas.
