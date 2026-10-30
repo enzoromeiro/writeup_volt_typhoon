@@ -21,7 +21,7 @@ Segundo o MITRE ATT&CK, Volt Typhoon (G1017), é um ator patrocinado pelo Estado
 
 ![Acesso inicial](img/2.jpeg)
 
-Active Directory Self Service é um serviço de autoatendimento para usuários de um domínio, usado para gerenciamento de senhas. Para esta primeira questão, vamos analisar os logs desse serviço, então o sourcetype na consulta será "adss". Como é dito na questão, o grupo Volt Typhoon geralmente obtém acesso inicial na rede explorando vulnerabilidades em software empresarial, e recentemente foi visto explorando o ADSelfService, a outra pista é que estamos procurando em qual momento a senha do usuário **dean** foi alterada e assumida pelo invasor.
+Active Directory Self Service é um serviço de autoatendimento para usuários de um domínio, usado para gerenciamento de senhas. Para esta primeira questão, vou analisar os logs desse serviço, então o sourcetype na consulta será "adss". Como é dito na questão, o grupo Volt Typhoon geralmente obtém acesso inicial na rede explorando vulnerabilidades em software empresarial, e recentemente foi visto explorando o ADSelfService, a outra pista é que estamos procurando em qual momento a senha do usuário **dean** foi alterada e assumida pelo invasor.
 
 Com essas informações em mãos, iremos fazer a seguinte consulta SPL: 
 `index=* sourcetype="adss" username="*dean*" action_name="Password Change" | table timestamp username action_name status`
@@ -51,7 +51,7 @@ A resposta da consulta mostrou esse evento com o usuário `voltyp-admin`, o usu�
 ![Execução](img/3.jpeg)
 
 WMIC, de forma simplificada, é como se fosse o painél de controle do Windows mas via linha de comando. É uma ferramenta nativa do Windows mas que foi descontinuada e só foi removida permanentemente no Windows 11, seu substituto passa a ser o PowerShell. 
-A tarefa diz que o grupo Volt Typhoon aproveitam o wmic ativo no sistema para realizar tarefas como coletar informações e despejar bancos de dados valiosos. A primeira pergunta quer saber o comando que o invasor executou para encontrar informações sobre unidades locais no `server01` e `server02`, vamos usar o nome desses servidores na consulta. 
+A tarefa diz que o grupo Volt Typhoon aproveitam o wmic ativo no sistema para realizar tarefas como coletar informações e despejar bancos de dados valiosos. A primeira pergunta quer saber o comando que o invasor executou para encontrar informações sobre unidades locais no `server01` e `server02`, vou usar o nome desses servidores na consulta. 
 
 ![Execução](img/3-a.jpeg)
 
@@ -84,7 +84,7 @@ A resposta da consulta mostrou três eventos vindo da conta comprometida. Um del
 ![Persistência](img/4.jpeg)
 
 A tarefa quatro diz que o Volt Typhoon frequentemente aplica web shells como mecanismo de persistência, e disfarçam elas como arquivos legítimos, permitindo o controle remoto sobre o servidor e executar os comandos sem ser detectado.
-A pergunta diz que o invasor criou uma web shell usando texto codificado em base64 (ofuscação), e quer saber em qual diretório o arquivo da web shell foi colocado. Vamos tentar usar essas informações ao nosso favor, para isso, preciso encontrar algum vestígio de base64 em algum evento.
+A pergunta diz que o invasor criou uma web shell usando texto codificado em base64 (ofuscação), e quer saber em qual diretório o arquivo da web shell foi colocado. Vou usar essas informações ao meu favor, para isso, preciso encontrar algum vestígio de base64 em algum evento.
 
 Consulta: `index="main" sourcetype="powershell" UserId="*dean-admin*" | stats count by CommandLine`
 
@@ -159,7 +159,7 @@ Consulta: `index="main" sourcetype="powershell" UserId="dean-admin" | stats coun
 
 ![Evasão de Defesa](img/5-a.jpeg)
 
-A resposta da consulta retorna alguns comandos, mas `Remove-ItemProperty` está diretamente relacionado com a limpeza de registros. Vamos investigar mais a fundo!
+A resposta da consulta retorna alguns comandos, mas `Remove-ItemProperty` está diretamente relacionado com a limpeza de registros. Vou investigar isso a fundo!
 
 Consulta: `index="main" sourcetype="powershell" UserId="dean-admin" "*Remove-ItemProperty*"`
 
