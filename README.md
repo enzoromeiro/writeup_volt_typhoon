@@ -5,11 +5,11 @@
 
 ### Quem é Volt Typhoon? 
 
-Segundo o MITRE ATT&CK, Volt Typhoon (G1017), é um ator patrocinado pelo Estado da República Popular da China (RPC) que está ativo desde pelo menos 2021, visando principalmente organizações de infraestrutura crítica nos EUA e seus territórios, incluindo Guam. O direcionamento e o padrão de comportamento do Volt Typhoon foram avaliados como pré-posicionamento para permitir o movimento lateral para ativos de tecnologia operacional (OT) para possíveis ataques destrutivos ou disruptivos. O Volt Typhoon enfatizou a furtividade nas operações usando web shells, binários living-off-the-land (LOTL), atividades práticas de teclado e credenciais roubadas.
+Segundo o MITRE ATT&CK, Volt Typhoon (G1017), é um ator patrocinado pelo Estado da República Popular da China (RPC) que está ativo desde pelo menos 2021, visando principalmente organizações de infraestrutura crítica nos EUA e seus territórios, incluindo Guam. O direcionamento e o padrão de comportamento do Volt Typhoon foram avaliados como pré-posicionamento para permitir o movimento lateral para ativos de tecnologia operacional (OT) para possíveis ataques destrutivos ou disruptivos. O Volt Typhoon enfatizou a furtividade nas operações usando webshells, binários living-off-the-land (LOTL), atividades práticas de teclado e credenciais roubadas.
 
 #### O que é a técnica Living Off The Land?
 
-É uma técnica de evasão de defesa, onde o atacante, após comprometer um sistema, utiliza binários e ferramentas legítimas do próprio sistema operacional para executar ações maliciosas, dificultando a detecção por antivírus e EDRs que confiam nessas ferramentas.
+É uma técnica de evasão de defesa em que o atacante, após comprometer um sistema, utiliza binários e ferramentas legítimas do próprio sistema operacional para executar ações maliciosas, dificultando a detecção.
 
 #### Para a execução desse Write-up, foram utilizados apenas a sala Volt Typhoon da plataforma TryHackMe e o Splunk, que também é disponibilizado por eles na plataforma. Nesta sala, é preciso saber Splunk SPL (linguagem de consulta do Splunk) para podermos achar eventos suspeitos e então analisar os logs. Também é necessário utilizar o framework MITRE ATT&CK, para estudarmos o grupo e suas táticas, técnicas e procedimentos.
 
@@ -21,13 +21,13 @@ Segundo o MITRE ATT&CK, Volt Typhoon (G1017), é um ator patrocinado pelo Estado
 
 ![Acesso inicial](img/2.jpeg)
 
-Active Directory Self Service é um serviço de autoatendimento para usuários de um domínio, usado para gerenciamento de senhas. Para esta primeira questão, vou analisar os logs desse serviço, então o sourcetype na consulta será "adss". Como é dito na questão, o grupo Volt Typhoon geralmente obtém acesso inicial na rede explorando vulnerabilidades em software empresarial, e recentemente foi visto explorando o ADSelfService, a outra pista é que estamos procurando em qual momento a senha do usuário **dean** foi alterada e assumida pelo invasor.
+Active Directory Self Service é uma solução de autoatendimento para usuários de um domínio, usado para gerenciamento de senhas. Para esta primeira questão, vou analisar os logs desse serviço, então o sourcetype na consulta será "adss". Como é dito na questão, o grupo Volt Typhoon geralmente obtém acesso inicial na rede explorando vulnerabilidades em software empresarial, e recentemente foi visto explorando o ADSelfService, a outra pista é que estamos procurando em qual momento a senha do usuário **dean** foi alterada e assumida pelo invasor.
 
 Com essas informações em mãos, iremos fazer a seguinte consulta SPL: 
 `index=* sourcetype="adss" username="*dean*" action_name="Password Change" | table timestamp username action_name status`
 
 Obviamente, precisa ser feito um estudo prévio e uma análise do tipo de log que estamos lidando, para saber o que consultar.
-Explicando rapidamente a consulta: estamos procurando o usuário **dean**, executando uma ação de troca de senha e organizando a saída em uma tabela com as colunas de tempo, usuário, nome da ação e o resultado da ação.
+Explicando rapidamente a consulta: Estou procurando o usuário **dean**, executando uma ação de troca de senha e organizando a saída em uma tabela com as colunas de tempo, usuário, nome da ação e o resultado da ação.
 
 (`"*"` considera qualquer caractere que tenha no espaço onde se encontra, ou seja, busca o usuário **dean** mesmo se houver algum nome antes ou depois. 
 `EX: admin-dean, dean-admin, user-dean-admin`) 
@@ -40,7 +40,7 @@ A outra questão quer o nome da nova conta de administrador, criada pouco tempo 
 
 A consulta: `index=* sourcetype="adss" action_name="Enrollment" | table timestamp username action_name status`
 
-Explicando a consulta: Estamos procurando uma ação de `Enrollment` (registro de novos usuários no adss) e organizando a saída em uma tabela com as colunas de tempo, usuário, nome da ação e o resultado da ação.
+Explicando a consulta: Estou procurando uma ação de `Enrollment` (registro de novos usuários no adss) e organizando a saída em uma tabela com as colunas de tempo, usuário, nome da ação e o resultado da ação.
 
 ![Acesso inicial](img/2-b.jpeg)
 
@@ -50,14 +50,14 @@ A resposta da consulta mostrou esse evento com o usuário `voltyp-admin`, o usu�
 
 ![Execução](img/3.jpeg)
 
-WMIC, de forma simplificada, é como se fosse o painél de controle do Windows mas via linha de comando. É uma ferramenta nativa do Windows mas que foi descontinuada e só foi removida permanentemente no Windows 11, seu substituto passa a ser o PowerShell. 
-A tarefa diz que o grupo Volt Typhoon aproveitam o wmic ativo no sistema para realizar tarefas como coletar informações e despejar bancos de dados valiosos. A primeira pergunta quer saber o comando que o invasor executou para encontrar informações sobre unidades locais no `server01` e `server02`, vou usar o nome desses servidores na consulta. 
+WMIC é uma ferramenta nativa do Windows que permite consultar e administrar informações do sistema por meio do WMI (Windows Management Instrumentation), utilizando comandos no terminal. Embora tenha sido descontinuada, ela ainda aparece em atividades de grupos APT que exploram ferramentas nativas do sistema.
+A tarefa diz que o grupo Volt Typhoon aproveita o wmic ativo no sistema para realizar tarefas como coletar informações e despejar bancos de dados valiosos. A primeira pergunta quer saber o comando que o invasor executou para encontrar informações sobre unidades locais no `server01` e `server02`, vou usar o nome desses servidores na consulta. 
 
 ![Execução](img/3-a.jpeg)
 
 Vou fazer a seguinte consulta: `index="main" sourcetype="wmic" username="*dean-admin*" ("*server01*" OR "*server02*") | table _time host username command result`
 
-Explicando a consulta: Estamos procurando nos logs do wmic algum evento que venha do usuário dean-admin (a conta comprometida), que contenha a palavra "server01" ou "server02" em algum lugar dele, e organizando a saída em uma tabela com as colunas de tempo, host(máquina), usuário, comando digitado e o resultado.
+Explicando a consulta: Estou procurando nos logs do wmic algum evento originado pelo usuário dean-admin (a conta comprometida), que contenha a palavra "server01" ou "server02" em algum lugar dele, e organizando a saída em uma tabela com as colunas de tempo, host(máquina), usuário, comando digitado e o resultado.
 
 ![Execução](img/3-b.jpeg)
 
@@ -67,15 +67,15 @@ A segunda pergunta quer saber qual senha o invasor define no arquivo, e o contex
 
 Vou fazer a seguinte consulta: `index="main" sourcetype="wmic" username="*dean-admin*" "*ntdsutil*"`
 
-Explicando a consulta: Estamos procurando nos logs do wmic algum evento que venha do usuário dean-admin (a conta comprometida), que contenha a palavra "ntdsutil" nele.
+Explicando a consulta: Estou procurando nos logs do wmic algum evento originado pelo usuário dean-admin (a conta comprometida), que contenha a palavra "ntdsutil" nele.
 
 A resposta da consulta mostrou um evento vindo do usuário dean-admin e da máquina server02 com o comando `wmic process call create "cmd.exe /c mkdir C:\Windows\Temp\tmp & ntdsutil.exe \"ac i ntds\"\"ifm create full C:\Windows\Temp\tmp\temp.dit""`, nesse comando ele cria o diretório `\tmp` dentro de `\Windows\Temp` e depois cria uma cópia completa do banco do AD dentro desse diretório, com o nome de `temp.dit`.
 
 Então vou fazer uma nova consulta usando essa informação: `index="main" sourcetype="wmic" username="*dean-admin*" "*temp.dit*" | table _time host username command result`
 
-Explicando a consulta: Estamos procurando nos logs do wmic algum evento que venha do usuário dean-admin (a conta comprometida), que contenha a palavra "temp.dit" (a cópia) nele, e organizando a saída em uma tabela com as colunas de tempo, host (máquina), usuário, comando e resultado.
+Explicando a consulta: Estou procurando nos logs do wmic algum evento originado pelo usuário dean-admin (a conta comprometida), que contenha a palavra "temp.dit" (a cópia) nele, e organizando a saída em uma tabela com as colunas de tempo, host (máquina), usuário, comando e resultado.
 
-A resposta da consulta mostrou três eventos vindo da conta comprometida. Um deles é o que analisamos anteriormente, o segundo foi a ação de mover a cópia para o servidor web, e o primeiro é a compactação do arquivo, onde podemos ver a senha que foi usada `d5ag0nm@5t3r`.
+A resposta da consulta mostrou três eventos vindos da conta comprometida. Um deles é o que analisamos anteriormente, o segundo foi a ação de mover a cópia para o servidor web, e o primeiro é a compactação do arquivo, onde podemos ver a senha que foi usada `d5ag0nm@5t3r`.
 
 ![Execução](img/3-c.jpeg)
 
@@ -83,25 +83,25 @@ A resposta da consulta mostrou três eventos vindo da conta comprometida. Um del
 
 ![Persistência](img/4.jpeg)
 
-A tarefa quatro diz que o Volt Typhoon frequentemente aplica web shells como mecanismo de persistência, e disfarçam elas como arquivos legítimos, permitindo o controle remoto sobre o servidor e executar os comandos sem ser detectado.
-A pergunta diz que o invasor criou uma web shell usando texto codificado em base64 (ofuscação), e quer saber em qual diretório o arquivo da web shell foi colocado. Vou usar essas informações ao meu favor, para isso, preciso encontrar algum vestígio de base64 em algum evento.
+A tarefa quatro diz que o Volt Typhoon frequentemente aplica webshells como mecanismo de persistência, e disfarçam elas como arquivos legítimos, permitindo o controle remoto sobre o servidor e executar os comandos sem ser detectado.
+A pergunta diz que o invasor criou uma webshell usando texto codificado em Base64 (ofuscação), e quer saber em qual diretório o arquivo da webshell foi colocado. Vou usar essas informações ao meu favor, para isso, preciso encontrar algum vestígio de base64 em algum evento.
 
 Consulta: `index="main" sourcetype="powershell" UserId="*dean-admin*" | stats count by CommandLine`
 
-Explicando a consulta: Estamos fazendo uma técnica chamada Stack Counting nos logs do PowerShell, essa técnica consiste em organizar por contagem alguma determinada informação (nesse caso comandos) para achar eventos raros e suspeitos. A consulta pega os logs do powershell que venha do usuário dean-admin (a conta comprometida), e organiza os comandos por contagem de ocorrências.
+Explicando a consulta: Estou fazendo uma técnica chamada Stack Counting nos logs do PowerShell, ela consiste em agrupar registros com base em uma determinada informação e contar quantas vezes cada valor aparece. Dessa forma, conseguimos identificar ocorrências menos frequentes ou fora do padrão, que podem merecer uma investigação mais detalhada. A consulta pega os logs do powershell originados pelo usuário dean-admin (a conta comprometida), e organiza os comandos por contagem de ocorrências.
 
 ![Persistência](img/4-a.jpeg)
 
-A resposta da consulta mostram alguns comandos digitados pelo invasor, e um que chama a atenção e foi digitado uma única vez é o `echo`, esse comando serve para exibir valores, textos, etc. na tela (equivalente ao print() do Python), mas também é possível salvar e adicionar textos em arquivos com ele utilizando os operadores `>` ou `>>`. 
-Com essa informação em mãos, o próximo passo é investigar mais a fundo para que esse comando foi utilizado.
+A resposta da consulta mostra alguns comandos digitados pelo invasor, e um que chama a atenção e foi digitado uma única vez é o `echo`. Este comando serve para exibir valores, textos, etc. na tela (equivalente ao print() do Python), mas também é possível salvar e adicionar textos em arquivos com ele utilizando os operadores `>` ou `>>`. 
+Com esta informação em mãos, o próximo passo é investigar mais a fundo para que esse comando foi utilizado.
 
 Vou fazer uma nova consulta: `index="main" sourcetype="powershell" UserId="*dean-admin*" "*echo*"`
 
-Explicando a consulta: Estamos procurando nos logs do PowerShell um evento que venha do usuário dean-admin (a conta comprometida), e que tenha a palavra "echo".
+Explicando a consulta: Estou procurando nos logs do PowerShell um evento originado pelo usuário dean-admin (a conta comprometida), e que tenha a palavra "echo".
 
 ![Persistência](img/4-b.jpeg)
 
-A resposta da consulta, como pode ser vista na imagem acima, mostra o evento em que houve a adição de algo codificado em Base64 em um arquivo que se encontra no caminho `C:\Windows\Temp\ntuser.ini`. A pergunta queria saber em qual diretório o web shell foi colocado, então precisamos decodificar o Base64 para saber se a resposta de fato é `C:\Windows\Temp\`.
+A resposta da consulta, como pode ser vista na imagem acima, mostra o evento em que houve a adição de algo codificado em Base64 em um arquivo que se encontra no caminho `C:\Windows\Temp\ntuser.ini`. A pergunta queria saber em qual diretório o webshell foi colocado, então precisamos decodificar o Base64 para saber se a resposta de fato é `C:\Windows\Temp\`.
 Copiando aquela string Base64 e usando um decodificador via terminal ou online, chegamos no seguinte código: 
 
 ```
@@ -145,17 +145,18 @@ Response.Write("</pre>");
 </body>
 </HTML>
 ```
-O código acima se trata de uma web shell em asp.net, que comprova a exatidão da resposta.
+O código acima se trata de uma webshell em asp.net, que comprova a exatidão da resposta.
 
 ### 5. Defense Evasion
 
 ![Evasão de Defesa](img/5.jpeg)
 
 Não é novidade que o Volt Typhoon usa técnicas de evasão de defesa para evitar ser detectado, e na tarefa número cinco diz que eles usam métodos como limpeza regular de arquivos, eliminação de logs e reconhecimento completo do ambiente operacional.
-A primeira pergunta diz que na tentativa de encobrir os rastros eles limpam os registros RDP, e quer saber qual cmdlet do PowerShell o invasor usa para remover o registro "usado mais recentemente". Para achar o cmdlet, usei a mesma consulta e a mesma técnica de Stack Counting da tarefa anterior.
+A primeira pergunta diz que na tentativa de encobrir os rastros eles limpam os registros RDP, e quer saber qual cmdlet do PowerShell o invasor usa para remover o registro "usado mais recentemente". 
 
 Consulta: `index="main" sourcetype="powershell" UserId="*dean-admin*" | stats count by CommandLine`
 
+Explicando a consulta: Estou procurando nos logs do PowerShell um evento originado pelo usuário dean-admin (a conta comprometida), e listando os comandos por ocorrências para achar algum relacionado à remoção.
 
 ![Evasão de Defesa](img/5-a.jpeg)
 
@@ -198,11 +199,11 @@ Na última pergunta, é questionado em qual caminho de regedit o invasor verific
 
 Consulta: `index="main" (sourcetype="powershell" OR sourcetype="wmic") (username="*dean-admin*" OR UserId="*dean-admin*") "*HKEY*" | eval User=coalesce(username, UserId) | eval Command=coalesce(CommandLine, command) | table _time host User Command`
 
-Explicação da consulta: Procurando pela palavra-chave "HKEY" nos logs do powershell e wmic que venha do usuário dean-admin. Usei o eval + coalesce para reter o resultado presente em um dos campos e organizei em formato de tabela com os campos de data/hora, host (máquina), usuário e comando. 
+Explicação da consulta: Procurando pela palavra-chave "HKEY" nos logs do powershell e wmic, originado pelo usuário dean-admin. Usei o eval + coalesce para reter o resultado presente em um dos campos e organizei em formato de tabela com os campos de data/hora, host (máquina), usuário e comando. 
 
 ![Evasão de Defesa](img/5-1.jpeg)
 
-O resultado da consulta mostra esses três eventos que contém a palavra-chave "HKEY", o evento mais antigo ocorreu no dia `26/03/2024` às `21:15:18` mas não está aparecendo o comando inteiro, então é preciso investigar o log bruto. Para isso, é necessário deixar apenas a primeira linha da consulta `index="main" (sourcetype="powershell" OR sourcetype="wmic") (username="*dean-admin*" OR UserId="*dean-admin*") "*HKEY*"`.
+O resultado da consulta mostra esses três eventos que contém a palavra-chave "HKEY", o evento mais antigo ocorreu no dia `26/03/2024` às `21h15min` mas não está aparecendo o comando inteiro, então é preciso investigar o log bruto. Para isso, é necessário deixar apenas a primeira linha da consulta `index="main" (sourcetype="powershell" OR sourcetype="wmic") (username="*dean-admin*" OR UserId="*dean-admin*") "*HKEY*"`.
 
 ![Evasão de Defesa](img/5-ca.jpeg)
 
@@ -213,13 +214,13 @@ Eu poderia ter documentado apenas o comando correto, mas eu quis mostrar que é 
 
 ![Acesso Credencial](img/6.jpeg)
 
-A tarefa 6 diz que o Volt Typhoon frequentemente vasculha rede de destino para descobrir e extrair credenciais de vários programas, e além disso, eles são conhecidos por acessar credenciais com hash diretamente da memória do sistema.
+A tarefa 6 diz que o Volt Typhoon frequentemente vasculha a rede de destino para descobrir e extrair credenciais de vários programas, e além disso, eles são conhecidos por acessar credenciais com hash diretamente da memória do sistema.
 A primeira pergunta diz que o grupo usa consultas `reg` para encontrar credenciais úteis, e quer saber quais são os três softwares que eles estão investigando.
 O comando `reg query` serve para consultar e ler informações diretamente do Registro do Windows através do Prompt de Comando (CMD) ou do PowerShell, sem a necessidade de abrir a interface gráfica do Editor do Registro (regedit). 
 
 Consulta: `index="main" sourcetype="powershell" CommandLine="reg" UserId="*dean-admin*"` 
 
-Explicação da consulta: Estou procurando nos logs do PowerShell alguma linha de comando que contenha a palavra "reg" e que venha do usuário `dean-admin`.
+Explicação da consulta: Estou procurando nos logs do PowerShell alguma linha de comando que contenha a palavra "reg" e que tenha sido originado pelo usuário `dean-admin`.
 
 ![Acesso Credencial](img/6-1.jpeg)
 
@@ -233,20 +234,20 @@ E o terceiro `OpenSSH`.
 
 ![Acesso Credencial](img/6-3.jpeg)
 
-A segunda pergunta quer saber o comando decodificado completo que o invasor usa para baixar e executar o programa mimikatz, usado para dumpar de credenciais da memória ram.
+A segunda pergunta quer saber o comando decodificado completo que o invasor usa para baixar e executar o programa mimikatz, uma ferramenta utilizada para extrair informações sensíveis, como credenciais, de processos e dumps de memória, incluindo dados relacionados ao LSASS.
 Para executar um comando codificado no terminal, certamente foi usado algum parâmetro como "-enc", "-E", "-encoded" ou algo do tipo. Então, para chegar até a resposta, vou fazer uma consulta com os parâmetros conhecidos que ele pode ter usado para encodar.
 
 Consulta: `index="main" sourcetype="powershell" (UserId="*dean-admin*" OR UserId="*voltyp-admin*") ("-EncodedCommand" OR "-enc" OR "-encoded" OR "-e" OR "-E")`
 
-Explicação da consulta: Estou procurando nos logs do PowerShell algum evento que venha do usuário `dean-admin` e que contenha alguma palavra como "-EncodedCommand", "-enc", "-encoded", "-e" ou "-E".
+Explicação da consulta: Estou procurando nos logs do PowerShell algum evento originado pelo usuário `dean-admin` e que contenha alguma palavra como "-EncodedCommand", "-enc", "-encoded", "-e" ou "-E".
 
 ![Acesso Credencial](img/6-b.jpeg)
 
-A resposta da consulta nos mostra um evento que contém a palavra "-E" e em seguida um comando codificado em Base64. Para descobrir o comando real, precisamos decodificar o Base64 em uma ferramenta de terminal ou online. Primeiro eu copio o código em Base64
+A resposta da consulta nos mostra um evento que contém a palavra "-E" e em seguida um comando codificado em Base64. Para descobrir o comando real, precisamos decodificá-lo em uma ferramenta de terminal ou online. Primeiro eu copio o código que está em Base64
 
 ![Acesso Credencial](img/6-ba.jpeg)
 
-E colo em um site online usado para codificar e decodificar Base64
+E colo em um site online utilizado para codificação e decodificação de Base64
 
 ![Acesso Credencial](img/6-bb.jpeg)
 
@@ -258,11 +259,11 @@ A saída nos mostra o comando real usado pelo atacante para baixar e executar o 
 ![Descoberta e Movimentação lateral](img/7.jpeg)
 
 A questão 7 diz que o grupo realiza a tática de descoberta (Discovery) usando técnicas de enumeração para coletar informações sobre arquitetura de rede, mecanismo de registro, logins bem-sucedidos e configurações de software. Além disso, realizam a tática de movimentação lateral (Lateral Movement) movendo shells criados anteriormente para servidores diferentes.
-A primeira pergunta diz que o invasor utiliza o wevtutil (ferramenta de recuperação de logs) para enumerar logs do Windows, e quer saber quais IDs de eventos o invasor está procurando. 
+A primeira pergunta diz que o invasor utiliza o wevtutil para enumerar logs do Windows, e quer saber quais IDs de eventos o invasor está procurando. 
 
 Consulta: `index="main" sourcetype="powershell" UserId="*dean-admin*" "*wevtutil*" EventID=* | table _time host CommandLine EventID`
 
-Explicação da consulta: Estamos procurando nos logs do powershell, algum evento que venha do usuário `dean-admin`, que tenha o `EventID` preenchido e que contenha a palavra "wevtutil" em algum lugar do log. O resultado é organizado em uma tabela contendo as colunas de data/hora, máquina, comando e o identificador do evento.
+Explicação da consulta: Estou procurando nos logs do PowerShell, algum evento originado pelo usuário `dean-admin`, que tenha o `EventID` preenchido e que contenha a palavra "wevtutil" em algum lugar do log. O resultado é organizado em uma tabela contendo as colunas de data/hora, máquina, comando e o identificador do evento.
 
 ![Descoberta e Movimentação lateral](img/7-a.jpeg)
 
@@ -277,9 +278,9 @@ Explicando a consulta: O que mudou em relação a consulta anterior é que estou
 O resultado da consulta mostra três eventos registrados: `4624`, `4625` e `4769`.
 É importante lembrar que a pergunta quer o resultado em ordem crescente, então coloquei do menor para o maior.
 
-A segunda pergunta diz que o invasor copia a shell da web original e se move lateralmente para o servidor-02, e ela quer saber qual é o nome do novo web shell que foi criado. 
+A segunda pergunta diz que o invasor copia a shell da web original e se move lateralmente para o servidor-02, e ela quer saber qual é o nome do novo webshell que foi criado. 
 
-Para obter mais detalhes sobre esse comportamento, vou consultar no MITRE ATT&CK algo relacionado a web shell.
+Para obter mais detalhes sobre esse comportamento, vou consultar no MITRE ATT&CK algo relacionado a webshell.
 
 ![Descoberta e Movimentação lateral](img/7-b.jpeg)
 
@@ -289,7 +290,7 @@ Com essa informação em mãos, farei o seguinte:
 
 Consulta: `index="main" sourcetype="powershell" "*server-02*" "*AuditReport.jspx*"`
 
-Explicação da consulta: Estou procurando nos logs no powershell algum evento que tenha as palavras "server-02" e "AuditReport.jspx".
+Explicação da consulta: Estou procurando nos logs do PowerShell algum evento que tenha as palavras "server-02" e "AuditReport.jspx".
 
 ![Descoberta e Movimentação lateral](img/7-bc.jpeg)
 
@@ -297,23 +298,23 @@ A resposta da consulta nos mostra um evento com a seguinte linha de comando: `Co
 
 Essa linha de comando mostra que o invasor copiou o arquivo `iisstart.aspx` e mandou para o server-02 renomeando para `AuditReport.jspx`.
 
-Daria para chegar na mesma resposta fazendo a técnica de stack counting, e seria da seguinte maneira:
+Daria para chegar na mesma resposta fazendo a técnica de Stack Counting, e seria da seguinte maneira:
 
 Consulta: `index="main" sourcetype="powershell" "*server-02*" | stats count by CommandLine`
 
-Explicação da consulta: Estamos procurando nos logs do powershell algum evento que contenha a palavra "server-02", a saída é  agrupada e organizada por quantidade de ocorrência de comandos (`CommandLine`). Dessa forma, descobriremos os comandos mais raros que foram executados.
+Explicação da consulta: Estou procurando nos logs do PowerShell algum evento que contenha a palavra "server-02", a saída é  agrupada e organizada por quantidade de ocorrência de comandos (`CommandLine`). Dessa forma, descobriremos os comandos mais raros que foram executados.
 
 ![Descoberta e Movimentação lateral](img/7-ba.jpeg)
 
-O resultado da consulta mostra 3 eventos, como o procedimento do atacante é copiar web shell para outros servidores, o comando `Copy-Item` é o que precisa ser investigado.
+O resultado da consulta mostra 3 eventos, como o procedimento do atacante é copiar webshell para outros servidores, o comando `Copy-Item` é o que precisa ser investigado.
 
 Consulta: `index="main" sourcetype="powershell" "*server-02*" "*Copy-Item*"`
 
-Explicação da consulta: Estamos procurando nos logs do powershell algum evento que contenha as palavras "server-02" e "Copy-Item"
+Explicação da consulta: Estou procurando nos logs do PowerShell algum evento que contenha as palavras "server-02" e "Copy-Item"
 
 ![Descoberta e Movimentação lateral](img/7-bb.jpeg)
 
-Dessa forma, chegamos no mesmo evento que foi achado anteriormente.
+Dessa forma, chegamos no mesmo evento que foi encontrado anteriormente.
 
 ### 8. Collection
 
@@ -324,7 +325,7 @@ A pergunta diz de que o invasor conseguiu localizar algumas informações financ
 
 Consulta: `index="main" sourcetype="powershell" UserId="*dean-admin*" | stats count by CommandLine`
 
-Explicação da consulta: Estou fazendo um Stack Counting nos logs do PowerShell e procurando por comandos digitados para encontrar ocorrências raras.
+Explicação da consulta: Estou listando comandos originados pelo `dean-admin` nos logs do PowerShell, para encontrar algum comando relacionado à cópia.
 
 ![Coleção](img/8-a.jpeg)
 
@@ -334,11 +335,11 @@ Comando: `index="main" sourcetype="powershell" UserId="*dean-admin*" CommandLine
 
 ![Coleção](img/8-aa.jpeg)
 
-Explicação do comando: Estou procurando nos logs do PowerShell algum evento que venha do usuário `dean-admin` e que contenha na linha de comando `Copy-Item`.
+Explicação do comando: Estou procurando nos logs do PowerShell algum evento originado pelo usuário `dean-admin` e que contenha na linha de comando `Copy-Item`.
 
 ![Coleção](img/8-ab.jpeg)
 
-Descendo um pouco após a consulta, haviam essas três cópias em sequência de arquivos `.csv` que se tratam de planilhas excel no formato bruto (sem formatação de tabela, fórmulas, cores, etc.). Os arquivos são: `2022.csv`, `2023.csv` e `2024.csv`. E a cópia tinha como destino a pasta criada pelo atacante no diretório `\Temp\faudit\`.
+Descendo um pouco após a consulta, havia essas três cópias em sequência de arquivos `.csv`, que armazenam dados tabulares em formato de texto, sem a formatação de uma planilha tradicional do Excel. Os arquivos são: `2022.csv`, `2023.csv` e `2024.csv`. E a cópia tinha como destino a pasta criada pelo atacante no diretório `\Temp\faudit\`.
 
 ### 9. C2 & Cleanup
 
@@ -350,7 +351,7 @@ A primeira pergunta diz que o invasor usa netsh para criar um proxy para comunic
 
 Consulta: `index="main" (sourcetype="powershell" OR sourcetype="wmic") (UserId="*dean-admin*" OR username="*dean-admin*") "*netsh*" | eval Command=coalesce(CommandLine, command) | eval User=coalesce(UserId, username) | table _time host User Command`
 
-Explicação da consulta: Estou procurando nos logs do powershell e do wmic algum evento que venha do usuário `dean-admin` e que contenha a palavra "netsh". 
+Explicação da consulta: Estou procurando nos logs do PowerShell e do wmic algum evento originado pelo usuário `dean-admin` e que contenha a palavra "netsh". 
 Como temos duas fontes de logs diferentes, os campos são diferentes, então no caso de uma ocorrência (campo) ser verdadeira, a outra vai estar vazia. Para resolver esse problema e facilitar a visualização na tabela vou utilizar o `eval` + `coalesce` nos campos de comando e nos campos de usuário, e então exibir o resultado como tabela nas colunas de data/hora, host (máquina), usuário e comando. 
 
 ![C2 e Limpeza](img/9-a.jpeg)
@@ -364,7 +365,7 @@ Entrei no MITRE ATT&CK para coletar alguma informação sobre esse comportamento
 
 Fiz a consulta utilizando essa informação: `index="main" (sourcetype="powershell" OR sourcetype="wmic") (UserId="*dean-admin*" OR username="*dean-admin*") (CommandLine="*wevtutil*" OR command="*wevtutil*") "cl"`
 
-Explicação da consulta: Estou procurando nos logs do powershell e do wmic algum evento que venha do usuário `dean-admin` e que contenha a palavra "wevtutil" com o comando de limpeza "cl".
+Explicação da consulta: Estou procurando nos logs do PowerShell e do wmic algum evento originado pelo usuário `dean-admin` e que contenha a palavra "wevtutil" com o comando de limpeza "cl".
 
 ![C2 e Limpeza](img/9-ba.jpeg)
 
@@ -389,4 +390,8 @@ usados pelo atacante e para que cada um foi usado:
 
 ## Conclusão
 
-Grupos APTs são o maior desafio para a equipe de cibersegurança em uma organização, eles utilizam técnicas avançadas em cada etapa do ataque. As soluções de segurança já possuem mecanismos para detectar o uso de ferramentas tradicionais usadas por atacantes para fins maliciosos, elas já estão "manjadas". Por este motivo, grupos APTs como Volt Typhoon utilizam técnicas "living off the land", usando binários/utilitários nativos do sistema operacional (os mecanismos de detecção confiam nessas ferramentas nativas) para realizar ações maliciosas na máquina infectada e na rede. Concluo que é muito importante a equipe de SOC monitorar e criar regras de detecção contra comportamentos anômalos em ferramentas nativas e legítimas.
+Grupos APT representam um grande desafio para as equipes de cibersegurança das organizações, pois utilizam técnicas avançadas em diferentes etapas de um ataque. Embora as soluções de segurança possuam mecanismos para detectar atividades maliciosas, o uso de ferramentas legítimas do próprio sistema operacional pode dificultar a identificação dessas ameaças.
+
+Por esse motivo, grupos como o Volt Typhoon utilizam técnicas de Living off the Land, explorando binários e utilitários nativos do sistema operacional para realizar ações maliciosas nas máquinas comprometidas e na rede.
+
+Concluo que é muito importante que as equipes de SOC monitorem comportamentos anômalos e desenvolvam regras de detecção voltadas ao uso indevido de ferramentas nativas e legítimas.
