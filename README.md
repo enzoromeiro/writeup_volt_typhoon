@@ -83,8 +83,8 @@ A resposta da consulta mostrou três eventos vindos da conta comprometida. Um de
 
 ![Persistência](img/4.jpeg)
 
-A tarefa quatro diz que o Volt Typhoon frequentemente aplica webshells como mecanismo de persistência, e disfarçam elas como arquivos legítimos, permitindo o controle remoto sobre o servidor e executar os comandos sem ser detectado.
-A pergunta diz que o invasor criou uma webshell usando texto codificado em Base64 (ofuscação), e quer saber em qual diretório o arquivo da webshell foi colocado. Vou usar essas informações ao meu favor, para isso, preciso encontrar algum vestígio de base64 em algum evento.
+A tarefa quatro diz que o Volt Typhoon frequentemente aplica webshells como mecanismo de persistência, e disfarça elas como arquivos legítimos, permitindo o controle remoto sobre o servidor e executar os comandos sem ser detectado.
+A pergunta diz que o invasor criou uma webshell usando texto codificado em Base64 (ofuscação), e quer saber em qual diretório o arquivo da webshell foi colocado. Vou usar essas informações a meu favor, para isso, preciso encontrar algum vestígio de base64 em algum evento.
 
 Consulta: `index="main" sourcetype="powershell" UserId="*dean-admin*" | stats count by CommandLine`
 
@@ -101,7 +101,7 @@ Explicando a consulta: Estou procurando nos logs do PowerShell um evento origina
 
 ![Persistência](img/4-b.jpeg)
 
-A resposta da consulta, como pode ser vista na imagem acima, mostra o evento em que houve a adição de algo codificado em Base64 em um arquivo que se encontra no caminho `C:\Windows\Temp\ntuser.ini`. A pergunta queria saber em qual diretório o webshell foi colocado, então precisamos decodificar o Base64 para saber se a resposta de fato é `C:\Windows\Temp\`.
+A resposta da consulta, como pode ser vista na imagem acima, mostra o evento em que houve a adição de algo codificado em Base64 em um arquivo que se encontra no caminho `C:\Windows\Temp\ntuser.ini`. A pergunta queria saber em qual diretório a webshell foi colocada, então precisamos decodificar o Base64 para saber se a resposta de fato é `C:\Windows\Temp\`.
 Copiando aquela string Base64 e usando um decodificador via terminal ou online, chegamos no seguinte código: 
 
 ```
@@ -166,14 +166,14 @@ Consulta: `index="main" sourcetype="powershell" UserId="dean-admin" "*Remove-Ite
 
 ![Evasão de Defesa](img/5-aa.jpeg)
 
-A resposta da consulta mostra esses 3 eventos em horários diferentes mas com o comando em comum: `Remove-ItemProperty -Path $registryPath -Name MRU0 -ErrorAction SilentlyContinue`
+A resposta da consulta mostra esses 3 eventos em horários diferentes mas com o comando em comum: `Remove-ItemProperty -Path $registryPath -Name MRU0 -ErrorAction SilentlyContinue`.
 O invasor em dias e horários diferentes veio limpando esses registros "MRU0(usado mais recentemente)", ele usou uma variável `$registryPath` que contém o caminho do registro, e quero ver qual foi o caminho passado para ela.
 
 Consulta: `index="main" sourcetype="powershell" UserId="*dean-admin*" "*Remove-ItemProperty*"`
 
 ![Evasão de Defesa](img/5-c.jpeg)
 
-A resposta da consulta mostra alguns eventos, e um em específico conseguimos ver qual caminho foi passado para a variável. 
+A resposta da consulta mostra alguns eventos, em um deles conseguimos ver qual caminho foi passado para a variável. 
 `$registryPath = "HKCU:\Software\Microsoft\Terminal Server Client\Default"` (Servidores e IPs que foram acessados via RDP a partir da máquina)
 
 Portanto, `Remove-ItemProperty` é de fato a resposta correta.
@@ -208,7 +208,7 @@ O resultado da consulta mostra esses três eventos que contém a palavra-chave "
 ![Evasão de Defesa](img/5-ca.jpeg)
 
 E como pode ser visto na imagem acima, o comando onde o invasor verifica evidências de um ambiente virtualizado é `Get-ItemProperty -Path "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control" | Select-Object -Property *Virtual*`.
-Eu poderia ter documentado apenas o comando correto, mas eu quis mostrar que é necessário a criatividade. Nem tudo acontece como deveria e não sei se foi proposital da sala, mas é nessas horas que a capacidade de resolver problemas se torna um diferencial.
+Eu poderia ter documentado apenas o comando correto, mas eu quis mostrar que é necessária a criatividade. Nem tudo acontece como deveria e não sei se foi proposital da sala, mas é nessas horas que a capacidade de resolver problemas se torna um diferencial.
 
 ### 6. Credential Access
 
@@ -271,14 +271,14 @@ A saída da consulta mostra 11 eventos com identificadores de evento em comum. P
 
 Consulta: `index="main" sourcetype="powershell" UserId="*dean-admin*" "*wevtutil*" EventID=* | stats values(EventID) as Eventos_Registrados by UserId | table UserId Eventos_Registrados`
 
-Explicando a consulta: O que mudou em relação a consulta anterior é que estou agrupando os `EventID`, removendo as duplicatas, renomeando o resultado para `Eventos_Registrados` e separando por usuário `UserId`. A saída será exibida em uma tabela com as colunas de usuário e eventos registrados.
+Explicando a consulta: O que mudou em relação à consulta anterior é que estou agrupando os `EventID`, removendo as duplicatas, renomeando o resultado para `Eventos_Registrados` e separando por usuário `UserId`. A saída será exibida em uma tabela com as colunas de usuário e eventos registrados.
 
 ![Descoberta e Movimentação lateral](img/7-aa.jpeg)
 
 O resultado da consulta mostra três eventos registrados: `4624`, `4625` e `4769`.
 É importante lembrar que a pergunta quer o resultado em ordem crescente, então coloquei do menor para o maior.
 
-A segunda pergunta diz que o invasor copia a shell da web original e se move lateralmente para o servidor-02, e ela quer saber qual é o nome do novo webshell que foi criado. 
+A segunda pergunta diz que o invasor copia a shell da web original e se move lateralmente para o servidor-02, e ela quer saber qual é o nome da nova webshell que foi criada. 
 
 Para obter mais detalhes sobre esse comportamento, vou consultar no MITRE ATT&CK algo relacionado a webshell.
 
@@ -306,7 +306,7 @@ Explicação da consulta: Estou procurando nos logs do PowerShell algum evento q
 
 ![Descoberta e Movimentação lateral](img/7-ba.jpeg)
 
-O resultado da consulta mostra 3 eventos, como o procedimento do atacante é copiar webshell para outros servidores, o comando `Copy-Item` é o que precisa ser investigado.
+O resultado da consulta mostra 3 eventos. Como o procedimento do atacante é copiar webshell para outros servidores, o comando `Copy-Item` é o que precisa ser investigado.
 
 Consulta: `index="main" sourcetype="powershell" "*server-02*" "*Copy-Item*"`
 
@@ -321,7 +321,7 @@ Dessa forma, chegamos no mesmo evento que foi encontrado anteriormente.
 ![Coleção](img/8.jpeg)
 
 A questão 8 diz que durante a fase de coleta (Collection) o grupo APT extrai vários tipos de dados como informações locais do navegador e ativos valiosos descobertos no ambiente.
-A pergunta diz de que o invasor conseguiu localizar algumas informações financeiras valiosas durante a fase de coleta, e quer saber quais são os três arquivos que o Volt Typhoon faz cópias usando o PowerShell (em ordem crescente).
+A pergunta diz que o invasor conseguiu localizar algumas informações financeiras valiosas durante a fase de coleta, e quer saber quais são os três arquivos que o Volt Typhoon faz cópias usando o PowerShell (em ordem crescente).
 
 Consulta: `index="main" sourcetype="powershell" UserId="*dean-admin*" | stats count by CommandLine`
 
@@ -331,11 +331,11 @@ Explicação da consulta: Estou listando comandos originados pelo `dean-admin` n
 
 O resultado da consulta mostra o comando `Copy-Item`, e embora ele tenha sido digitado 11 vezes, como a pergunta quer saber quais são os arquivos que o Volt Typhoon faz cópias, esse comando é equivalente, então vou investigá-lo mais a fundo.
 
-Comando: `index="main" sourcetype="powershell" UserId="*dean-admin*" CommandLine="Copy-Item"`
+Consulta: `index="main" sourcetype="powershell" UserId="*dean-admin*" CommandLine="Copy-Item"`
 
 ![Coleção](img/8-aa.jpeg)
 
-Explicação do comando: Estou procurando nos logs do PowerShell algum evento originado pelo usuário `dean-admin` e que contenha na linha de comando `Copy-Item`.
+Explicação da consulta: Estou procurando nos logs do PowerShell algum evento originado pelo usuário `dean-admin` e que contenha na linha de comando `Copy-Item`.
 
 ![Coleção](img/8-ab.jpeg)
 
@@ -380,7 +380,7 @@ usados pelo atacante e para que cada um foi usado:
 |---------|-------------|---------------------|
 | wmic | Interface de linha de comando para consultar e administrar o sistema via WMI (Windows Management Instrumentation). Descontinuado e substituído pelo PowerShell. | Executou comandos remotamente em outras máquinas (ex: /node:webserver-01 process call create) e coletou informações das unidades locais no server01 e server02. |
 | cmd | Interpretador de comandos clássico do Windows | Acionado via wmic, criou o diretório \tmp e renomeou cisco-up.7z para cl64.gif na pasta wwwroot do webserver-01. |
-| wevtutil | Ferramenta de terminal utilizada para visualização, remoção e gerenciamento de eventos registrados (Event Viewer) via terminal. | Enumerou os eventos 4624,4625 e 4769 para coletar informações e limpou os logs de eventos do Windows. |
+| wevtutil | Ferramenta de terminal utilizada para visualização, remoção e gerenciamento de eventos registrados (Event Viewer) via terminal. | Enumerou os eventos 4624, 4625 e 4769 para coletar informações e limpou os logs de eventos do Windows. |
 | netsh | Configuração de rede via linha de comando | Criação de proxy para comunicações C2. |
 | ntdsutil |  Utilitário avançado destinado a administradores de redes para realizar a manutenção, recuperação e gerenciamento do banco de dados do Active Directory. | Fez o dump do banco do AD para a pasta \tmp.  |
 | powershell | PowerShell é um terminal nativo do Windows com mais funcionalidades e linguagem de script. | Executou comandos codificados em Base64, incluindo o download do Mimikatz, e copiou arquivos para movimentação lateral e coleta. |
